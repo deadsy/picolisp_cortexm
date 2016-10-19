@@ -1,0 +1,11 @@
+--- ./src/main.c	2016-10-19 13:24:52.951420107 -0700
++++ ./src/main.c	2016-10-19 13:27:57.299080646 -0700
+@@ -709,7 +709,7 @@
+ }
+ 
+ /*** Main ***/
+-int main(int ac, char *av[]) {
++int picolisp_main(int ac, char *av[]) {
+    int i;
+    char *p;
+ 

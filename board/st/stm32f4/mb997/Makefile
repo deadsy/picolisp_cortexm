@@ -40,6 +40,7 @@ X_CFLAGS += -Wno-unused-parameter
 # linker flags
 LDSCRIPT = stm32f407vg_flash.ld
 X_LDFLAGS = -T$(LDSCRIPT) -Wl,-Map,$(OUTPUT).map -Wl,--gc-sections
+X_LDFLAGS += -L$(TOP)/picolisp/miniPicoLisp/src
 
 # defines
 DEFINES = -DSTM32F407xx
@@ -52,8 +53,8 @@ DEFINES = -DSTM32F407xx
 .PHONY: all clean
 
 all: $(OBJ)
-	$(X_GCC) $(X_CFLAGS) $(X_LDFLAGS) $(OBJ) -lm -o $(OUTPUT)
-	#$(X_OBJCOPY) -O binary $(OUTPUT) $(OUTPUT).bin
+	$(X_GCC) $(X_CFLAGS) $(X_LDFLAGS) $(OBJ) -lm -lpicolisp -o $(OUTPUT)
+	$(X_OBJCOPY) -O binary $(OUTPUT) $(OUTPUT).bin
 
 clean:
 	-rm $(OBJ)	

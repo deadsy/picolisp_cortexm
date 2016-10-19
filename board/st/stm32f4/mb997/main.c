@@ -13,7 +13,7 @@
 
 //-----------------------------------------------------------------------------
 
-extern int picolisp_main(void);
+extern int picolisp_main(int ac, char *av[]);
 
 //-----------------------------------------------------------------------------
 
@@ -86,13 +86,16 @@ void debounce_off_handler(uint32_t bits) {
 
 int main(void) {
 
+   char *argv = {"picolisp",};
+
+
     HAL_Init();
     SystemClock_Config();
     gpio_init();
     debounce_init();
     usart_init();
 
-    picolisp_main();
+    picolisp_main(sizeof(argv)/sizeof(char*), &argv);
 
     return 0;
 }
