@@ -1,0 +1,53 @@
+--- ./src/Makefile	2015-07-24 01:10:51.000000000 -0700
++++ ./src/Makefile	2016-10-19 11:02:39.804696556 -0700
+@@ -1,37 +1,29 @@
+ # 24jul15abu
+ # (c) Software Lab. Alexander Burger
+ 
+-.SILENT:
++TOP = ../../..
++include $(TOP)/mk/common.mk
+ 
+-bin = ../bin
+-picoFiles = main.c gc.c apply.c flow.c sym.c subr.c math.c io.c
++# TODO fix these paren warnings
++X_CFLAGS += -Wno-parentheses
+ 
+-picolisp: $(bin)/picolisp
++SRC = main.c gc.c apply.c flow.c sym.c subr.c math.c io.c
++OBJ = $(SRC:.c=.o)
+ 
+ .c.o:
+-	echo $*.c:
+-	gcc -c -O2 -pipe \
+-	-falign-functions -fomit-frame-pointer -fno-strict-aliasing \
+-	-W -Wimplicit -Wreturn-type -Wunused -Wformat \
+-	-Wuninitialized -Wstrict-prototypes \
+-	-D_GNU_SOURCE  $*.c
+-
+-$(bin)/picolisp: $(picoFiles:.c=.o)
+-	mkdir -p $(bin)
+-	echo "  " link picolisp:
+-	gcc -o $(bin)/picolisp $(picoFiles:.c=.o) -lc -lm
+-	strip $(bin)/picolisp
++	$(X_GCC) $(X_CFLAGS) -D_GNU_SOURCE -c $*.c
+ 
+-$(picoFiles:.c=.o): pico.h sym.d rom.d ram.d
++libpicolisp.a: $(OBJ)
++	$(X_AR) rcs $@ $(OBJ)
++
++$(OBJ): pico.h sym.d rom.d ram.d
+ 
+ sym.d rom.d ram.d: gen3m init.s lib.s pilog.s
+ 	./gen3m 0 init.s lib.s pilog.s
+ 
+ gen3m: gen3m.c
+-	gcc -o gen3m gen3m.c
++	$(HOST_GCC) -o gen3m gen3m.c
+ 
+ # Clean up
+ clean:
+-	rm -f gen3m *.d *.o
+-
+-# vi:noet:ts=4:sw=4
++	rm -f gen3m *.d *.o *.a
