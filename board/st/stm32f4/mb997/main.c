@@ -89,7 +89,6 @@ int main(void) {
     HAL_Init();
     SystemClock_Config();
     gpio_init();
-    timers_init();
     debounce_init();
     usart_init();
 

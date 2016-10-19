@@ -10,7 +10,6 @@ Using USART2/AF7 mapped to PA2(tx) PA3(rx).
 
 #include "stm32f4xx_hal.h"
 #include "usart.h"
-#include "serial.h"
 #include "gpio.h"
 
 //-----------------------------------------------------------------------------
@@ -248,7 +247,7 @@ void usart_init(void)
 }
 
 //-----------------------------------------------------------------------------
-// these are the serial api functions used by grbl and stdio
+// these are the serial api functions used by stdio
 
 void serial_init(void)
 {
@@ -265,40 +264,6 @@ void serial_write(uint8_t data)
 int __io_putchar(int ch)
 {
   usart_putc(ch);
-  return 0;
-}
-
-// read a character from the rx buffer
-uint8_t serial_read(void)
-{
-  if (usart_tstc()) {
-    uint8_t c = usart_getc();
-    if (!serial_rx_hook(c)) {
-      return c;
-    }
-  }
-  return SERIAL_NO_DATA;
-}
-
-// Reset and empty data in read buffer. Used by e-stop and reset.
-void serial_reset_read_buffer(void)
-{
-  while (usart_tstc()) {
-    usart_getc();
-  }
-}
-
-// Returns the number of bytes used in the RX serial buffer.
-uint8_t serial_get_rx_buffer_count(void)
-{
-  // TODO
-  return 0;
-}
-
-// Returns the number of bytes used in the TX serial buffer.
-uint8_t serial_get_tx_buffer_count(void)
-{
-  // TODO
   return 0;
 }
 
