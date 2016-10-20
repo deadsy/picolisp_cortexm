@@ -26,7 +26,7 @@ SRC += $(BOARD_DIR)/main.c \
        $(BOARD_DIR)/usart.c \
 
 # rtt logging
-RTT_DIR = $(TOP)/cortexm/rtt
+RTT_DIR = $(TOP)/common/rtt
 SRC += $(RTT_DIR)/SEGGER_RTT.c \
 
 OBJ = $(patsubst %.c, %.o, $(SRC))
