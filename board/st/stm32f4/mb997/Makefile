@@ -11,6 +11,7 @@ SRC += $(HAL_DIR)/stm32f4xx_hal.c \
        $(HAL_DIR)/stm32f4xx_hal_rcc.c \
        $(HAL_DIR)/stm32f4xx_hal_cortex.c \
        $(HAL_DIR)/stm32f4xx_hal_gpio.c \
+
 #       $(HAL_DIR)/stm32f4xx_hal_tim.c \
 #       $(HAL_DIR)/stm32f4xx_hal_tim_ex.c \
 
@@ -24,6 +25,10 @@ SRC += $(BOARD_DIR)/main.c \
        $(BOARD_DIR)/debounce.c \
        $(BOARD_DIR)/usart.c \
 
+# rtt logging
+RTT_DIR = $(TOP)/cortexm/rtt
+SRC += $(RTT_DIR)/SEGGER_RTT.c \
+
 OBJ = $(patsubst %.c, %.o, $(SRC))
 OBJ += $(BOARD_DIR)/start.o
 
@@ -31,6 +36,7 @@ OBJ += $(BOARD_DIR)/start.o
 INC = .
 INC += $(TOP)/board/st/stm32f4/cmsis
 INC += $(TOP)/board/st/stm32f4/hal/inc
+INC += $(RTT_DIR)
 
 INCLUDE = $(addprefix -I,$(INC))
 

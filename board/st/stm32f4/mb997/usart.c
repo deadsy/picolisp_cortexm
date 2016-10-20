@@ -151,38 +151,38 @@ char usart_getc(void)
 // enable the peripheral clock for the usart
 static void enable_usart_clock(USART_TypeDef *usart)
 {
-    if (usart == USART1) {
-        RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
-    } else if (usart == USART2) {
-        RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
-    } else if (usart == USART3) {
-        RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
-    } else if (usart == UART4) {
-        RCC->APB1ENR |= RCC_APB1ENR_UART4EN;
-    } else if (usart == UART5) {
-        RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
-    } else if (usart == USART6) {
-        RCC->APB2ENR |= RCC_APB2ENR_USART6EN;
-    }
+  if (usart == USART1) {
+    RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
+  } else if (usart == USART2) {
+    RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
+  } else if (usart == USART3) {
+    RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
+  } else if (usart == UART4) {
+    RCC->APB1ENR |= RCC_APB1ENR_UART4EN;
+  } else if (usart == UART5) {
+    RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
+  } else if (usart == USART6) {
+    RCC->APB2ENR |= RCC_APB2ENR_USART6EN;
+  }
 }
 
 //-----------------------------------------------------------------------------
 
 static void set_baud_rate(USART_TypeDef *usart, int baud)
 {
-    if (usart->CR1 & USART_CR1_OVER8) {
-        if (usart == USART1 || usart == USART6) {
-            usart->BRR = __UART_BRR_SAMPLING8(HAL_RCC_GetPCLK2Freq(), baud);
-        } else {
-            usart->BRR = __UART_BRR_SAMPLING8(HAL_RCC_GetPCLK1Freq(), baud);
-        }
+  if (usart->CR1 & USART_CR1_OVER8) {
+    if (usart == USART1 || usart == USART6) {
+      usart->BRR = __UART_BRR_SAMPLING8(HAL_RCC_GetPCLK2Freq(), baud);
     } else {
-        if (usart == USART1 || usart == USART6) {
-            usart->BRR = __UART_BRR_SAMPLING16(HAL_RCC_GetPCLK2Freq(), baud);
-        } else {
-            usart->BRR = __UART_BRR_SAMPLING16(HAL_RCC_GetPCLK1Freq(), baud);
-        }
+      usart->BRR = __UART_BRR_SAMPLING8(HAL_RCC_GetPCLK1Freq(), baud);
     }
+  } else {
+    if (usart == USART1 || usart == USART6) {
+      usart->BRR = __UART_BRR_SAMPLING16(HAL_RCC_GetPCLK2Freq(), baud);
+    } else {
+      usart->BRR = __UART_BRR_SAMPLING16(HAL_RCC_GetPCLK1Freq(), baud);
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------
