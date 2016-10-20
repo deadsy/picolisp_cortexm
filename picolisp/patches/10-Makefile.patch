@@ -1,5 +1,5 @@
 --- ./src/Makefile	2015-07-24 01:10:51.000000000 -0700
-+++ ./src/Makefile	2016-10-19 11:02:39.804696556 -0700
++++ ./src/Makefile	2016-10-20 15:35:48.625601886 -0700
 @@ -1,37 +1,29 @@
  # 24jul15abu
  # (c) Software Lab. Alexander Burger
@@ -39,7 +39,8 @@
 +$(OBJ): pico.h sym.d rom.d ram.d
  
  sym.d rom.d ram.d: gen3m init.s lib.s pilog.s
- 	./gen3m 0 init.s lib.s pilog.s
+-	./gen3m 0 init.s lib.s pilog.s
++	./gen3m 32 init.s lib.s pilog.s
  
  gen3m: gen3m.c
 -	gcc -o gen3m gen3m.c
