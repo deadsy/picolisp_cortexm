@@ -249,22 +249,23 @@ void usart_init(void)
 //-----------------------------------------------------------------------------
 // these are the serial api functions used by stdio
 
-void serial_init(void)
-{
+void serial_init(void) {
     // do nothing
 }
 
 // write a character to the tx buffer
-void serial_write(uint8_t data)
-{
+void serial_write(uint8_t data) {
   usart_putc(data);
 }
 
 // hook up stdio output to the serial port
-int __io_putchar(int ch)
-{
+int __io_putchar(int ch) {
   usart_putc(ch);
   return 0;
+}
+
+int __io_getchar(void) {
+  return (int)usart_getc();
 }
 
 //-----------------------------------------------------------------------------

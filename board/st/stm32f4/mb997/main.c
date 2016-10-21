@@ -32,8 +32,6 @@ void Error_Handler(void) {
 
 static void SystemClock_Config(void)
 {
-  char tmp[80];
-
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
   RCC_OscInitTypeDef RCC_OscInitStruct;
 
@@ -107,15 +105,7 @@ int main(void) {
   debounce_init();
   usart_init();
 
-  while(1) {
-    if (usart_tstc()) {
-      char c = usart_getc();
-      usart_putc(c);
-    }
-  }
-
   picolisp_main(sizeof(argv)/sizeof(char*), &argv);
-
   return 0;
 }
 
