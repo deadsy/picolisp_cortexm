@@ -59,9 +59,6 @@ static void SystemClock_Config(void)
     Error_Handler();
   }
 
-  sprintf(tmp, "%d\n", (int)SystemCoreClock);
-  SEGGER_RTT_TerminalOut(0, tmp);
-
   // Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2 clocks dividers.
   // The SysTick 1 msec interrupt is required for the HAL process (Timeout management); by default
   // the configuration is done using the HAL_Init() API, and when the system clock configuration
@@ -74,9 +71,6 @@ static void SystemClock_Config(void)
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
     Error_Handler();
   }
-
-  sprintf(tmp, "%d\n", (int)SystemCoreClock);
-  SEGGER_RTT_TerminalOut(0, tmp);
 
   // STM32F405x/407x/415x/417x Revision Z devices: prefetch is supported
   if (HAL_GetREVID() == 0x1001) {
