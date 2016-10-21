@@ -96,7 +96,7 @@ void debounce_off_handler(uint32_t bits) {
 //-----------------------------------------------------------------------------
 
 int main(void) {
-  char *argv = {"picolisp",};
+  char *argv[] = {"", 0};
 
   SEGGER_RTT_Init();
   HAL_Init();
@@ -105,7 +105,7 @@ int main(void) {
   debounce_init();
   usart_init();
 
-  picolisp_main(sizeof(argv)/sizeof(char*), &argv);
+  picolisp_main(2, argv);
   return 0;
 }
 
