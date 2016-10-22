@@ -63,8 +63,7 @@ static int rx_errors;
 #define cli() NVIC_DisableIRQ(USART2_IRQn)
 #define sei() NVIC_EnableIRQ(USART2_IRQn)
 
-void USART2_IRQHandler(void)
-{
+void USART2_IRQHandler(void) {
   USART_TypeDef* const usart = USART2;
   uint32_t status = usart->SR;
 
@@ -103,8 +102,7 @@ void USART2_IRQHandler(void)
   }
 }
 
-void usart_putc(char c)
-{
+void usart_putc(char c) {
   USART_TypeDef* const usart = USART2;
   int tx_wr_inc = INC_MOD(tx_wr, TXBUF_SIZE);
   // wait for space
@@ -118,22 +116,15 @@ void usart_putc(char c)
   usart->CR1 |= USART_CR1_TXEIE;
 }
 
-void usart_flush(void)
-{
+void usart_flush(void) {
 }
 
 // return non-zero if we have rx data
-int usart_tstc(void)
-{
-  int status;
-  cli();
-  status = (rx_rd != rx_wr);
-  sei();
-  return status;
+int usart_tstc(void) {
+  return rx_rd != rx_wr;
 }
 
-char usart_getc(void)
-{
+char usart_getc(void) {
   char c;
   // wait for a character
   while (usart_tstc() == 0);

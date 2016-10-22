@@ -1,158 +1,162 @@
-/**
-*****************************************************************************
-**
-**  File        : syscalls.c
-**
-**  Abstract    : Atollic TrueSTUDIO Minimal System calls file
-**
-** 		          For more information about which c-functions
-**                need which of these lowlevel functions
-**                please consult the Newlib libc-manual
-**
-**  Environment : Atollic TrueSTUDIO
-**
-**  Distribution: The file is distributed “as is,” without any warranty
-**                of any kind.
-**
-**  (c)Copyright Atollic AB.
-**  You may use this file as-is or modify it according to the needs of your
-**  project. Distribution of this file (unmodified or modified) is not
-**  permitted. Atollic AB permit registered Atollic TrueSTUDIO(R) users the
-**  rights to distribute the assembled, compiled & linked contents of this
-**  file as part of an application binary file, provided that it is built
-**  using the Atollic TrueSTUDIO(R) Pro toolchain.
-**
-*****************************************************************************
+//-----------------------------------------------------------------------------
+/*
+
+Re-entrant syscall hooks for the newlib library.
+See libc.pdf in the gnu tool files.
+See http://www.eistec.se/docs/contiki/a01137_source.html
+
 */
+//-----------------------------------------------------------------------------
 
-/* Includes */
-#include <sys/stat.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <stdio.h>
-#include <signal.h>
-#include <time.h>
-#include <sys/time.h>
+#include <unistd.h>
+#include <sys/reent.h>
 #include <sys/times.h>
+#include <string.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 
+#include "usart.h"
 
-/* Variables */
-#undef errno
-extern int errno;
-extern int __io_putchar(int ch) __attribute__((weak));
-extern int __io_getchar(void) __attribute__((weak));
-
-register char * stack_ptr asm("sp");
+//-----------------------------------------------------------------------------
+// Empty environment definition
 
 char *__env[1] = { 0 };
 char **environ = __env;
 
-/* Functions */
-void initialise_monitor_handles(void) {
-}
+//-----------------------------------------------------------------------------
+// file operations
 
-int _getpid(void) {
-	return 1;
-}
-
-int _kill(int pid, int sig) {
-  errno = EINVAL;
+int _open_r(struct _reent *ptr, const char *file, int flags, int mode) {
+  ptr->_errno = ENOENT;
   return -1;
 }
 
-void _exit (int status) {
-  _kill(status, -1);
-  while (1) {} // Make sure we hang here
+int _close_r(struct _reent *ptr, int fd) {
+  ptr->_errno = EBADF;
+  return -1;
 }
 
-int _read (int file, char *ptr, int len) {
-  int DataIdx;
-  for (DataIdx = 0; DataIdx < len; DataIdx++) {
-    *ptr++ = __io_getchar();
+_ssize_t _read_r(struct _reent *ptr, int fd, void *buf, size_t cnt) {
+  unsigned i;
+  char *cbuf = buf;
+  for (i = 0; i < cnt; i ++) {
+    *cbuf++ = (char)__io_getchar();
   }
-  return len;
+  return cnt;
 }
 
-int _write(int file, char *ptr, int len) {
-  int DataIdx;
-  for (DataIdx = 0; DataIdx < len; DataIdx++) {
-    __io_putchar( *ptr++ );
+_ssize_t _write_r(struct _reent *ptr, int fd, const void *buf, size_t cnt) {
+  unsigned i;
+  const char *cbuf = buf;
+  for (i = 0; i < cnt; i ++) {
+    __io_putchar((int)*cbuf++);
   }
-  return len;
+  return cnt;
 }
 
-caddr_t _sbrk(int incr) {
+int _fstat_r(struct _reent *ptr, int fd, struct stat *pstat) {
+  // say it's a character file
+  pstat->st_mode = S_IFCHR;
+  return 0;
+}
+
+off_t _lseek_r(struct _reent *ptr, int fd, off_t pos, int whence) {
+  return 0;
+}
+
+int _link_r(struct _reent *ptr, const char *old, const char *new) {
+  ptr->_errno = EMLINK;
+  return -1;
+}
+
+int _stat_r(struct _reent *ptr, const char *file, struct stat *pstat) {
+  // say it's a character file
+  pstat->st_mode = S_IFCHR;
+  return 0;
+}
+
+int _unlink_r(struct _reent *ptr, const char *file) {
+  ptr->_errno = ENOENT;
+  return -1;
+}
+
+int _isatty_r(struct _reent *ptr, int fd) {
+  return 1;
+}
+
+int _isatty(int fd) {
+  return _isatty_r(_REENT, fd);
+}
+
+//-----------------------------------------------------------------------------
+// memory allocation
+
+#include "SEGGER_RTT.h"
+
+register char *stack_ptr asm("sp");
+
+void *_sbrk_r(struct _reent *ptr, ptrdiff_t incr) {
+
   extern char end asm("end");
   static char *heap_end;
   char *prev_heap_end;
 
-  if (heap_end == 0)
+  if (heap_end == 0) {
     heap_end = &end;
+  }
+
+  SEGGER_RTT_printf(0, "%p %d bytes\n", heap_end, incr);
 
   prev_heap_end = heap_end;
   if (heap_end + incr > stack_ptr) {
-//		write(1, "Heap and stack collision\n", 25);
-//		abort();
-    errno = ENOMEM;
-    return (caddr_t) -1;
+    ptr->_errno = ENOMEM;
+    return (void *) -1;
   }
 
   heap_end += incr;
-  return (caddr_t) prev_heap_end;
+
+  return (void *) prev_heap_end;
 }
 
-int _close(int file) {
+//-----------------------------------------------------------------------------
+// process control
+
+void _exit (int status) {
+  while (1);
+}
+
+int _execve_r(struct _reent *ptr, const char *name, char *const argv [], char *const env []) {
+  ptr->_errno = ENOMEM;
   return -1;
 }
 
-int _fstat(int file, struct stat *st) {
-  st->st_mode = S_IFCHR;
-  return 0;
+int _fork_r(struct _reent *ptr) {
+  ptr->_errno = ENOTSUP;
+  return -1;
 }
 
-int _isatty(int file) {
+int _wait_r(struct _reent *ptr, int *status) {
+  ptr->_errno = ECHILD;
+  return -1;
+}
+
+int _kill_r(struct _reent *ptr, int pid, int sig) {
+  ptr->_errno = EINVAL;
+  return -1;
+}
+
+int _getpid_r(struct _reent *ptr) {
   return 1;
 }
 
-int _lseek(int file, int ptr, int dir) {
-  return 0;
-}
+//-----------------------------------------------------------------------------
+// time
 
-int _open(char *path, int flags, ...) {
-  /* Pretend like we always fail */
+clock_t _times_r(struct _reent *ptr, struct tms *ptms) {
+  ptr->_errno = EACCES;
   return -1;
 }
 
-int _wait(int *status) {
-  errno = ECHILD;
-  return -1;
-}
-
-int _unlink(char *name) {
- errno = ENOENT;
- return -1;
-}
-
-int _times(struct tms *buf) {
-  return -1;
-}
-
-int _stat(char *file, struct stat *st) {
-  st->st_mode = S_IFCHR;
-  return 0;
-}
-
-int _link(char *old, char *new) {
-  errno = EMLINK;
-  return -1;
-}
-
-int _fork(void) {
-  errno = EAGAIN;
-  return -1;
-}
-
-int _execve(char *name, char **argv, char **env) {
-  errno = ENOMEM;
-  return -1;
-}
+//-----------------------------------------------------------------------------

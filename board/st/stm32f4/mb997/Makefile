@@ -28,6 +28,7 @@ SRC += $(BOARD_DIR)/main.c \
 # rtt logging
 RTT_DIR = $(TOP)/common/rtt
 SRC += $(RTT_DIR)/SEGGER_RTT.c \
+       $(RTT_DIR)/SEGGER_RTT_printf.c \
 
 OBJ = $(patsubst %.c, %.o, $(SRC))
 OBJ += $(BOARD_DIR)/start.o
