@@ -5,12 +5,14 @@
 //-----------------------------------------------------------------------------
 
 #include "stm32f4xx_hal.h"
-#include "SEGGER_RTT.h"
 
 #include "gpio.h"
 #include "debounce.h"
 #include "timers.h"
 #include "usart.h"
+
+//#define DEBUG
+#include "logging.h"
 
 //-----------------------------------------------------------------------------
 
@@ -98,7 +100,8 @@ void debounce_off_handler(uint32_t bits) {
 int main(void) {
   char *argv[] = {"", 0};
 
-  SEGGER_RTT_Init();
+  log_init();
+
   HAL_Init();
   SystemClock_Config();
   gpio_init();
