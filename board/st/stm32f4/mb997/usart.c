@@ -238,20 +238,3 @@ void usart_init(void)
 }
 
 //-----------------------------------------------------------------------------
-// these are the serial api functions used by stdio
-
-int __io_putchar(int ch) {
-  // autoadd a CR
-  if (ch == '\n') {
-    usart_putc('\r');
-  }
-  usart_putc(ch);
-  return 0;
-}
-
-int __io_getchar(void) {
-  while (usart_tstc() == 0);
-  return (int)usart_getc();
-}
-
-//-----------------------------------------------------------------------------

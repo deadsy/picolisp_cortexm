@@ -17,9 +17,6 @@ int usart_tstc(void);
 char usart_getc(void);
 void usart_init(void);
 
-int __io_getchar(void);
-int __io_putchar(int ch);
-
 //-----------------------------------------------------------------------------
 
 #endif // USART_H
