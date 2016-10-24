@@ -19,7 +19,7 @@ See http://www.eistec.se/docs/contiki/a01137_source.html
 
 #include "usart.h"
 
-#define DEBUG
+//#define DEBUG
 #include "logging.h"
 
 //-----------------------------------------------------------------------------

@@ -1,22 +1,24 @@
 --- ./src/Makefile	2015-07-24 01:10:51.000000000 -0700
-+++ ./src/Makefile	2016-10-20 21:46:59.598012759 -0700
++++ ./src/Makefile	2016-10-24 06:11:28.330017980 -0700
 @@ -1,37 +1,33 @@
- # 24jul15abu
- # (c) Software Lab. Alexander Burger
- 
--.SILENT:
+-# 24jul15abu
+-# (c) Software Lab. Alexander Burger
 +TOP = ../../..
 +include $(TOP)/mk/common.mk
  
--bin = ../bin
--picoFiles = main.c gc.c apply.c flow.c sym.c subr.c math.c io.c
+-.SILENT:
 +# TODO fix these paren warnings
 +X_CFLAGS += -Wno-parentheses
  
--picolisp: $(bin)/picolisp
+-bin = ../bin
+-picoFiles = main.c gc.c apply.c flow.c sym.c subr.c math.c io.c
 +# defines
 +X_CFLAGS += -D_GNU_SOURCE
 +X_CFLAGS += -DCELLS=8192
+ 
+-picolisp: $(bin)/picolisp
++# logging
++X_CFLAGS += -I$(TOP)/common/logging
 +
 +SRC = main.c gc.c apply.c flow.c sym.c subr.c math.c io.c
 +OBJ = $(SRC:.c=.o)
