@@ -15,6 +15,7 @@ See http://www.eistec.se/docs/contiki/a01137_source.html
 #include <stdio.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <ctype.h>
 #include <errno.h>
 
 #include "usart.h"
@@ -26,20 +27,72 @@ See http://www.eistec.se/docs/contiki/a01137_source.html
 // read/write functions for the serial port
 
 static _ssize_t usart_read_r(struct _reent *ptr, int fd, void *buf, size_t cnt) {
+  static int prev_char = -1;
   char *cbuf = buf;
-  unsigned int n = 0;
-  if (usart_tstc() == 0) {
-    // There's no data. We are a blocking device, so block.
-    while(usart_tstc() == 0);
+  unsigned int i;
+  char c;
+  
+  DBG0("%s: %s() line %d cnt %d\n", __FILE__, __func__, __LINE__, cnt);
+
+  i = 0;
+  while (i < cnt) {  
+
+    if (prev_char != -1) {
+      // we have a look-ahead character
+      c = prev_char;
+      prev_char = -1;
+    } else {
+      // block until we get a character
+      while(usart_tstc() == 0);
+      c = usart_getc();
+    }
+
+    // handle a backspace
+    if (c == 8 || c == 0x7F) {
+      if (i > 0) {
+        i --;        
+        usart_putc(8);      
+        usart_putc(' ');      
+        usart_putc(8);      
+      }      
+      continue;
+    }
+
+    // filter out things we don't care about
+    if (!isprint(c) && c != '\n' && c != '\r') {
+      continue;
+    }
+
+    // local echo
+    usart_putc(c);
+
+    // handle \r\n and \n\r sequences
+    if (c == '\r' || c == '\n') {
+      // give the other character a chance to come in
+      if (usart_tstc() == 0) {
+        // TODO
+      }
+      // get the other character, if we have one
+      if (usart_tstc() != 0) {
+        prev_char = usart_getc();
+        if (prev_char + c == '\r' + '\n') {
+          // ignore the other \r or \n
+          prev_char = -1;
+        }
+      }
+      // local echo the other character
+      usart_putc('\r' + '\n' - c);
+      // return a buffer terminating with \n
+      cbuf[i ++] = '\n';
+      return i;
+    }
+
+    // add the character to the buffer
+    cbuf[i ++] = c;
   }
-  // There is something to read.
-  // Read what we can up to the buffer limit.
-  while ((usart_tstc() != 0) && (n < cnt)) {
-    *cbuf++ = usart_getc();
-    n ++;
-  }
-  DBG0("%s: %s() line %d read %d bytes\n", __FILE__, __func__, __LINE__, n);
-  return n;
+
+  // return the full buffer
+  return i;
 }
 
 static _ssize_t usart_write_r(struct _reent *ptr, int fd, const void *buf, size_t cnt) {
