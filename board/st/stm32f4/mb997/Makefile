@@ -30,9 +30,11 @@ RTT_DIR = $(TOP)/common/rtt
 SRC += $(RTT_DIR)/SEGGER_RTT.c \
        $(RTT_DIR)/SEGGER_RTT_printf.c \
 
-# logging
-LOGGING_DIR = $(TOP)/common/logging
-SRC += $(LOGGING_DIR)/logging.c \
+# common
+COMMON_DIR = $(TOP)/common
+SRC += $(COMMON_DIR)/logging.c \
+
+#       $(COMMON_DIR)/linenoise.c \
 
 OBJ = $(patsubst %.c, %.o, $(SRC))
 OBJ += $(BOARD_DIR)/start.o
@@ -42,7 +44,7 @@ INC = .
 INC += $(TOP)/board/st/stm32f4/cmsis
 INC += $(TOP)/board/st/stm32f4/hal/inc
 INC += $(RTT_DIR)
-INC += $(LOGGING_DIR)
+INC += $(COMMON_DIR)
 
 INCLUDE = $(addprefix -I,$(INC))
 
