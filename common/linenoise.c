@@ -111,6 +111,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "linenoise.h"
+#include "usart.h"
 
 #define LINENOISE_DEFAULT_HISTORY_MAX_LEN 100
 #define LINENOISE_MAX_LINE 4096
@@ -214,11 +215,11 @@ static int getCursorPosition(int ifd, int ofd) {
     unsigned int i = 0;
 
     /* Report cursor location */
-    if (write(ofd, "\x1b[6n", 4) != 4) return -1;
+    if (serial_write("\x1b[6n", 4) != 4) return -1;
 
     /* Read the response: ESC [ rows ; cols R */
     while (i < sizeof(buf)-1) {
-        if (read(ifd,buf+i,1) != 1) break;
+        if (serial_getc(buf+i,-1) != 1) break;
         if (buf[i] == 'R') break;
         i++;
     }
@@ -240,7 +241,7 @@ static int getColumns(int ifd, int ofd) {
     if (start == -1) goto failed;
 
     /* Go to right margin and get position. */
-    if (write(ofd,"\x1b[999C",6) != 6) goto failed;
+    if (serial_write("\x1b[999C",6) != 6) goto failed;
     cols = getCursorPosition(ifd,ofd);
     if (cols == -1) goto failed;
 
@@ -248,7 +249,7 @@ static int getColumns(int ifd, int ofd) {
     if (cols > start) {
         char seq[32];
         snprintf(seq,32,"\x1b[%dD",cols-start);
-        if (write(ofd,seq,strlen(seq)) == -1) {
+        if (serial_write(seq,strlen(seq)) == -1) {
             /* Can't recover... */
         }
     }
@@ -260,7 +261,7 @@ failed:
 
 /* Clear the screen. Used to handle ctrl+l */
 void linenoiseClearScreen(void) {
-    if (write(STDOUT_FILENO,"\x1b[H\x1b[2J",7) <= 0) {
+    if (serial_write("\x1b[H\x1b[2J",7) <= 0) {
         /* nothing to do, just to avoid warning. */
     }
 }
@@ -268,8 +269,8 @@ void linenoiseClearScreen(void) {
 /* Beep, used for completion when there is nothing to complete or when all
  * the choices were already shown. */
 static void linenoiseBeep(void) {
-    fprintf(stderr, "\x7");
-    fflush(stderr);
+    serial_write("\x7", 1);
+    serial_flush();
 }
 
 /* ============================== Completion ================================ */
@@ -315,7 +316,7 @@ static int completeLine(struct linenoiseState *ls) {
                 refreshLine(ls);
             }
 
-            nread = read(ls->ifd,&c,1);
+            nread = serial_getc(&c,-1);
             if (nread <= 0) {
                 freeCompletions(&lc);
                 return -1;
@@ -444,7 +445,6 @@ void refreshShowHints(struct abuf *ab, struct linenoiseState *l, int plen) {
 static void refreshSingleLine(struct linenoiseState *l) {
     char seq[64];
     size_t plen = strlen(l->prompt);
-    int fd = l->ofd;
     char *buf = l->buf;
     size_t len = l->len;
     size_t pos = l->pos;
@@ -474,7 +474,7 @@ static void refreshSingleLine(struct linenoiseState *l) {
     /* Move cursor to original position. */
     snprintf(seq,64,"\r\x1b[%dC", (int)(pos+plen));
     abAppend(&ab,seq,strlen(seq));
-    if (write(fd,ab.b,ab.len) == -1) {} /* Can't recover from write error. */
+    if (serial_write(ab.b,ab.len) == -1) {} /* Can't recover from write error. */
     abFree(&ab);
 }
 
@@ -490,7 +490,7 @@ static void refreshMultiLine(struct linenoiseState *l) {
     int rpos2; /* rpos after refresh. */
     int col; /* colum position, zero-based. */
     int old_rows = l->maxrows;
-    int fd = l->ofd, j;
+    int j;
     struct abuf ab;
 
     /* Update maxrows if needed. */
@@ -561,7 +561,7 @@ static void refreshMultiLine(struct linenoiseState *l) {
     lndebug("\n");
     l->oldpos = l->pos;
 
-    if (write(fd,ab.b,ab.len) == -1) {} /* Can't recover from write error. */
+    if (serial_write(ab.b,ab.len) == -1) {} /* Can't recover from write error. */
     abFree(&ab);
 }
 
@@ -587,7 +587,7 @@ int linenoiseEditInsert(struct linenoiseState *l, char c) {
             if ((!mlmode && l->plen+l->len < l->cols && !hintsCallback)) {
                 /* Avoid a full update of the line in the
                  * trivial case. */
-                if (write(l->ofd,&c,1) == -1) return -1;
+                if (serial_write(&c,1) == -1) return -1;
             } else {
                 refreshLine(l);
             }
@@ -733,13 +733,13 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
      * initially is just an empty string. */
     linenoiseHistoryAdd("");
 
-    if (write(l.ofd,prompt,l.plen) == -1) return -1;
+    if (serial_write(prompt,l.plen) == -1) return -1;
     while(1) {
         char c;
         int nread;
         char seq[3];
 
-        nread = read(l.ifd,&c,1);
+        nread = serial_getc(&c,-1);
         if (nread <= 0) return l.len;
 
         /* Only autocomplete when the callback is set. It returns < 0 when
@@ -808,14 +808,14 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
             /* Read the next two bytes representing the escape sequence.
              * Use two calls to handle slow terminals returning the two
              * chars at different times. */
-            if (read(l.ifd,seq,1) == -1) break;
-            if (read(l.ifd,seq+1,1) == -1) break;
+            if (serial_getc(seq,-1) == -1) break;
+            if (serial_getc(seq+1,-1) == -1) break;
 
             /* ESC [ sequences. */
             if (seq[0] == '[') {
                 if (seq[1] >= '0' && seq[1] <= '9') {
                     /* Extended escape, read additional byte. */
-                    if (read(l.ifd,seq+2,1) == -1) break;
+                    if (serial_getc(seq+2,-1) == -1) break;
                     if (seq[2] == '~') {
                         switch(seq[1]) {
                         case '3': /* Delete key. */
@@ -902,17 +902,17 @@ void linenoisePrintKeyCodes(void) {
     while(1) {
         char c;
         int nread;
+        char tmp[64];
 
-        nread = read(STDIN_FILENO,&c,1);
+        nread = serial_getc(&c,-1);
         if (nread <= 0) continue;
         memmove(quit,quit+1,sizeof(quit)-1); /* shift string to left. */
         quit[sizeof(quit)-1] = c; /* Insert current char on the right. */
         if (memcmp(quit,"quit",sizeof(quit)) == 0) break;
 
-        printf("'%c' %02x (%d) (type quit to exit)\n",
-            isprint(c) ? c : '?', (int)c, (int)c);
-        printf("\r"); /* Go left edge manually, we are in raw mode. */
-        fflush(stdout);
+        snprintf(tmp, sizeof(tmp), "'%c' %02x (%d) (type quit to exit)\n\r", isprint(c) ? c : '?', (int)c, (int)c);
+        serial_write(tmp, strlen(tmp));
+        serial_flush();
     }
 }
 

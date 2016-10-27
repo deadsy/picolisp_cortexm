@@ -21,28 +21,24 @@ Using USART2/AF7 mapped to PA2(tx) PA3(rx).
 
 #ifdef SERIAL_POLLED
 
-void usart_putc(char c)
-{
-    USART_TypeDef* const usart = USART2;
-    while ((usart->SR & USART_SR_TXE) == 0);
-    usart->DR = c;
+void usart_putc(char c) {
+  USART_TypeDef* const usart = USART2;
+  while ((usart->SR & USART_SR_TXE) == 0);
+  usart->DR = c;
 }
 
-void usart_flush(void)
-{
+void usart_flush(void) {
 }
 
 // return non-zero if we have rx data
-int usart_tstc(void)
-{
-    USART_TypeDef* const usart = USART2;
-    return (usart->SR & USART_SR_RXNE) != 0;
+int usart_tstc(void) {
+  USART_TypeDef* const usart = USART2;
+  return (usart->SR & USART_SR_RXNE) != 0;
 }
 
-char usart_getc(void)
-{
-    USART_TypeDef* const usart = USART2;
-    return usart->DR & 255;
+char usart_getc(void) {
+  USART_TypeDef* const usart = USART2;
+  return usart->DR & 255;
 }
 
 //-----------------------------------------------------------------------------
@@ -140,8 +136,7 @@ char usart_getc(void) {
 //-----------------------------------------------------------------------------
 
 // enable the peripheral clock for the usart
-static void enable_usart_clock(USART_TypeDef *usart)
-{
+static void enable_usart_clock(USART_TypeDef *usart) {
   if (usart == USART1) {
     RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
   } else if (usart == USART2) {
@@ -159,8 +154,7 @@ static void enable_usart_clock(USART_TypeDef *usart)
 
 //-----------------------------------------------------------------------------
 
-static void set_baud_rate(USART_TypeDef *usart, int baud)
-{
+static void set_baud_rate(USART_TypeDef *usart, int baud) {
   if (usart->CR1 & USART_CR1_OVER8) {
     if (usart == USART1 || usart == USART6) {
       usart->BRR = __UART_BRR_SAMPLING8(HAL_RCC_GetPCLK2Freq(), baud);
@@ -178,8 +172,7 @@ static void set_baud_rate(USART_TypeDef *usart, int baud)
 
 //-----------------------------------------------------------------------------
 
-void usart_init(void)
-{
+void usart_init(void) {
     USART_TypeDef* const usart = USART2;
     uint32_t val;
 
@@ -235,6 +228,57 @@ void usart_init(void)
 
     // enable the uart
     usart->CR1 |= USART_CR1_UE;
+}
+
+//-----------------------------------------------------------------------------
+
+// write a buffer of character to the serial port
+// return the number of characters written.
+ssize_t serial_write(const void *buf, size_t count) {
+  char *cbuf = (char*)buf;
+  size_t i;
+  for (i = 0; i < count; i ++) {
+    usart_putc(cbuf[i]);
+  }
+  return count;
+}
+
+int serial_flush(void) {
+  usart_flush();
+  return 0;
+}
+
+// read a character from the serial port, return the number of characters read
+// timeout = 0 : return immediately if there is no character
+// timeout < 0 : wait until we have a character
+// timeout > 0 : wait for n ticks (ms)
+int serial_getc(char *c, int timeout) {
+  if (timeout == 0) {
+    // no timeout
+    if (usart_tstc()) {
+      *c = usart_getc();
+      return 1;
+    } else {
+      // no character
+      return 0;
+    }
+  } else if (timeout < 0) {
+    // wait forever
+    while (usart_tstc() == 0);
+    *c = usart_getc();
+    return 1;
+  } else {
+    // defined timeout
+    uint32_t to = HAL_GetTick() + timeout;
+    while (HAL_GetTick() < to) {
+      if (usart_tstc()) {
+        *c = usart_getc();
+        return 1;
+      }
+    }
+    // timeout
+    return -1;
+  }
 }
 
 //-----------------------------------------------------------------------------
