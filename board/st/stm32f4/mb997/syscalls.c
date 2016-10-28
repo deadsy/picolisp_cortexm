@@ -20,7 +20,7 @@ See http://www.eistec.se/docs/contiki/a01137_source.html
 
 #include "usart.h"
 
-//#define DEBUG
+#define DEBUG
 #include "logging.h"
 
 //-----------------------------------------------------------------------------
@@ -31,11 +31,11 @@ static _ssize_t usart_read_r(struct _reent *ptr, int fd, void *buf, size_t cnt) 
   char *cbuf = buf;
   unsigned int i;
   char c;
-  
+
   DBG0("%s: %s() line %d cnt %d\n", __FILE__, __func__, __LINE__, cnt);
 
   i = 0;
-  while (i < cnt) {  
+  while (i < cnt) {
 
     if (prev_char != -1) {
       // we have a look-ahead character
@@ -50,11 +50,11 @@ static _ssize_t usart_read_r(struct _reent *ptr, int fd, void *buf, size_t cnt) 
     // handle a backspace
     if (c == 8 || c == 0x7F) {
       if (i > 0) {
-        i --;        
-        usart_putc(8);      
-        usart_putc(' ');      
-        usart_putc(8);      
-      }      
+        i --;
+        usart_putc(8);
+        usart_putc(' ');
+        usart_putc(8);
+      }
       continue;
     }
 
@@ -206,6 +206,10 @@ int _isatty_r(struct _reent *ptr, int fd) {
   }
   ptr->_errno = EBADF;
   return -1;
+}
+
+int _isatty(int fd) {
+  return _isatty_r(_REENT, fd);
 }
 
 int _link_r(struct _reent *ptr, const char *old, const char *new) {
