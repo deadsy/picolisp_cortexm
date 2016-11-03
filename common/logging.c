@@ -51,6 +51,7 @@ void log_printf(char *format_msg, ...) {
   va_start(p_args, format_msg);
   (void)SEGGER_RTT_vprintf(LOG_TERMINAL_NORMAL, format_msg, &p_args);
   va_end(p_args);
+  SEGGER_RTT_WriteString(LOG_TERMINAL_NORMAL, "\r\n");
 }
 
 //-----------------------------------------------------------------------------
